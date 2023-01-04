@@ -1,6 +1,4 @@
-function main() {
-
-   console.log("Hello World");
+function generateFlights() {
    fetch("https://raw.githubusercontent.com/mwgg/Airports/master/airports.json").then(function (response) {
       return response.json();
    }).then(function (json) {
@@ -34,7 +32,7 @@ function main() {
       const jsonStr = JSON.stringify(array);
       // write JSON string to a file
       const fs = require('fs');
-      fs.writeFile('data.json', jsonStr, function (err) {
+      fs.writeFile('./files/generated-flight-data.json', jsonStr, function (err) {
          if (err) throw err;
          console.log('complete');
       })
@@ -44,4 +42,4 @@ function main() {
 
 }
 
-main()
+generateFlights()
