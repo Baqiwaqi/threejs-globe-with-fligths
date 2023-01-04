@@ -1,0 +1,88 @@
+<head>
+  <style>
+    body {
+      margin: 0;
+    }
+  </style>
+  <script src="//unpkg.com/globe.gl"></script>
+  <script src="//unpkg.com/three"></script>
+  <script src="//unpkg.com/three-globe"></script>
+  <!--<script src="../../dist/three-globe.js"></script>-->
+</head>
+
+<body>
+  <div id="globeViz"></div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three/build/three.module.js",
+        "COUNTRIES": "https://raw.githubusercontent.com/janarosmonaliev/github-globe/main/src/files/globe-data-min.json",
+        "my-flights": "https://raw.githubusercontent.com/janarosmonaliev/github-globe/main/src/files/my-flights.json"
+      }
+    }
+  </script>
+  <script type="module">
+    const world = Globe()(document.getElementById("globeViz"))
+      .globeImageUrl("//unpkg.com/three-globe/example/img/earth-dark.jpg")
+      .hexPolygonResolution(3)
+      .hexPolygonMargin(0.7)
+      .showAtmosphere(true)
+      .atmosphereColor("#3a228a")
+      .atmosphereAltitude(0.25)
+      .hexPolygonColor((e) => {
+        if (
+          ["KGZ", "KOR", "THA", "RUS", "UZB", "IDN", "KAZ", "MYS"].includes(
+            e.properties.ISO_A3
+          )
+        ) {
+          return "rgba(255,255,255, 1)";
+        } else return "rgba(255,255,255, 0.7)";
+      })
+      .hexPolygonAltitude((e) => {
+        if (
+          ["KGZ", "KOR", "THA", "RUS", "UZB", "IDN", "KAZ", "MYS"].includes(
+            e.properties.ISO_A3
+          )
+        ) {
+          return 0.02;
+        } else return 0.03;
+      });
+    // Auto-rotate
+    world.controls().autoRotate = true;
+    world.controls().autoRotateSpeed = 1.8;
+
+    fetch("../files/globe-data-min.json")
+      .then((res) => res.json())
+      .then((countries) => {
+        world.hexPolygonsData(countries.features);
+
+        setTimeout(
+          () =>
+            world
+              .polygonsTransitionDuration(4000)
+              .arcsData(countries.flights)
+              .arcColor((e) => {
+                return e.status ? "#fff" : "#fff";
+              })
+              .arcAltitude((e) => {
+                return e.arcAlt;
+              })
+              .arcStroke((e) => {
+                return e.status ? 0.5 : 0.3;
+              })
+              .arcDashLength(0.9)
+              .arcDashGap(4)
+              .arcDashAnimateTime(2000)
+              .arcsTransitionDuration(2000)
+              .arcDashInitialGap((e) => e.order * 1),
+          //   .pathPointAlt((pnt) => pnt[2]) // set altitude accessor
+          //   .pathTransitionDuration(4000),
+          //   .polygonAltitude((feat) =>
+          //     Math.max(0.1, Math.sqrt(+feat.properties.POP_EST) * 7e-5)
+          //   ),
+          3000
+        );
+      });
+  </script>
+</body>

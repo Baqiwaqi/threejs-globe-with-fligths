@@ -1,0 +1,144 @@
+<script type="module">
+  const world = Globe()(document.getElementById("globeViz"))
+    .globeImageUrl("//unpkg.com/three-globe/example/img/earth-dark.jpg")
+    .pointOfView({ altitude: 4 }, 5000)
+    .polygonCapColor((feat) => "rgba(200, 0, 0, 0.6)")
+    .polygonSideColor(() => "rgba(0, 100, 0, 0.05)")
+    .polygonLabel(
+      ({ properties: d }) => `
+         <b>${d.ADMIN} (${d.ISO_A2})</b> <br />
+         Population: <i>${Math.round(+d.POP_EST / 1e4) / 1e2}M</i>
+       `
+    );
+
+  // Auto-rotate
+  world.controls().autoRotate = true;
+  world.controls().autoRotateSpeed = 1.8;
+
+  fetch("../files/globe-data-min.json")
+    .then((res) => res.json())
+    .then((countries) => {
+      world.polygonsData(
+        countries.features.filter((d) => d.properties.ISO_A2 !== "AQ")
+      );
+
+      setTimeout(
+        () =>
+          world
+            .polygonsTransitionDuration(4000)
+            .polygonAltitude((feat) =>
+              Math.max(0.1, Math.sqrt(+feat.properties.POP_EST) * 7e-5)
+            ),
+        3000
+      );
+    });
+</script>
+
+<script type="module">
+  import { TrackballControls } from "//unpkg.com/three/examples/jsm/controls/TrackballControls.js";
+
+  let mouseX = 0;
+  let mouseY = 0;
+  let windowHalfX = window.innerWidth / 2;
+  let windowHalfY = window.innerHeight / 2;
+
+  Object.assign(THREE, { TrackballControls });
+
+  const Globe = new ThreeGlobe({
+    waitForGlobeReady: true,
+    animateIn: true,
+  })
+    .globeImageUrl("//unpkg.com/three-globe/example/img/earth-dark.jpg")
+    .hexPolygonResolution(3)
+    .hexPolygonMargin(0.7)
+    .showAtmosphere(true)
+    .atmosphereColor("#3a228a")
+    .atmosphereAltitude(0.25)
+    .hexPolygonColor((e) => {
+      if (
+        ["KGZ", "KOR", "THA", "RUS", "UZB", "IDN", "KAZ", "MYS"].includes(
+          e.properties.ISO_A3
+        )
+      ) {
+        return "rgba(255,255,255, 1)";
+      } else return "rgba(255,255,255, 0.7)";
+    });
+  //  .hexPolygonAltitude((e) => {
+  //    if (
+  //      ["KGZ", "KOR", "THA", "RUS", "UZB", "IDN", "KAZ", "MYS"].includes(
+  //        e.properties.ISO_A3
+  //      )
+  //    ) {
+  //      return 0.1;
+  //    } else return 0.05;
+  //  });
+
+  fetch("../files/globe-data-min.json").then((res) => {
+    res.json().then((data) => {
+      Globe.hexPolygonsData(countries.features);
+    });
+  });
+
+  Globe.rotateY(-Math.PI * (5 / 9));
+  Globe.rotateZ(-Math.PI / 6);
+
+  // Setup lights
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  directionalLight.position.set(1, 1, 1); // change light position to see the specularMap's effect
+
+  // Setup renderer
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  // renderer.outputEncoding = THREE.sRGBEncoding;
+  document.body.appendChild(renderer.domElement);
+
+  // Setup scene
+  const scene = new THREE.Scene();
+  scene.add(Globe);
+  scene.add(new THREE.AmbientLight(0xbbbbbb, 0.7));
+  //  scene.add(directionalLight);
+  scene.background = new THREE.Color(0x040d21);
+
+  // Setup camera
+  const camera = new THREE.PerspectiveCamera();
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+
+  var dLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  dLight.position.set(-800, 2000, 400);
+  camera.add(dLight);
+
+  var dLight1 = new THREE.DirectionalLight(0x7982f6, 1);
+  dLight1.position.set(-200, 500, 200);
+  camera.add(dLight1);
+
+  var dLight2 = new THREE.PointLight(0x8566cc, 0.5);
+  dLight2.position.set(-200, 500, 200);
+  camera.add(dLight2);
+  camera.position.z = 400;
+  camera.position.x = 0;
+  camera.position.y = 0;
+  scene.fog = new THREE.Fog(0x535ef3, 400, 2000);
+  // Add camera controls
+  const controls = new THREE.TrackballControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dynamicDampingFactor = 0.01;
+  controls.enablePan = false;
+  controls.minDistance = 200;
+  controls.maxDistance = 500;
+  controls.rotateSpeed = 0.8;
+  controls.zoomSpeed = 1;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.5;
+
+  controls.minPolarAngle = Math.PI / 3.5;
+  controls.maxPolarAngle = Math.PI - Math.PI / 3;
+
+  // Kick-off renderer
+  (function animate() {
+    controls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  })();
+</script>
